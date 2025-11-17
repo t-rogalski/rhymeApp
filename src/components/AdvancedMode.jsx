@@ -30,7 +30,7 @@ function AdvancedMode() {
   }, [words, minSyllables, maxSyllables]);
 
   useEffect(() => {
-    fetch('/pl_words.txt')
+    fetch(`${import.meta.env.BASE_URL}pl_words.txt`)
       .then((response) => response.text())
       .then((text) => {
         const wordList = text.split('\n').filter((word) => word.trim() !== '');
