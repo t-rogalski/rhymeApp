@@ -5,16 +5,21 @@ import './index.css';
 import App from './App.jsx';
 import AdvancedMode from './components/AdvancedMode.jsx';
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      element: <App />,
+    },
+    {
+      path: '/advanced',
+      element: <AdvancedMode />,
+    },
+  ],
   {
-    path: '/',
-    element: <App />,
-  },
-  {
-    path: '/advanced',
-    element: <AdvancedMode />,
-  },
-]);
+    basename: '/rhymeApp',
+  }
+);
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
