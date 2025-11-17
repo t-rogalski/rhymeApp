@@ -1,4 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+
+const VOWELS = ['a', 'ą', 'e', 'ę', 'i', 'o', 'ó', 'u', 'y'];
+
+const countSyllables = (word) => {
+  if (!word) return 0;
+  return word
+    .toLowerCase()
+    .split('')
+    .filter((char) => VOWELS.includes(char)).length;
+};
 
 function AdvancedMode() {
   const [words, setWords] = useState([]);
@@ -8,6 +19,15 @@ function AdvancedMode() {
   const [highScore, setHighScore] = useState(0);
   const [timerDuration, setTimerDuration] = useState(60);
   const [timeLeft, setTimeLeft] = useState(60);
+  const [minSyllables, setMinSyllables] = useState(1);
+  const [maxSyllables, setMaxSyllables] = useState(15);
+
+  const filteredWords = useMemo(() => {
+    return words.filter((word) => {
+      const syllables = countSyllables(word);
+      return syllables >= minSyllables && syllables <= maxSyllables;
+    });
+  }, [words, minSyllables, maxSyllables]);
 
   useEffect(() => {
     fetch('/pl_words.txt')
@@ -15,11 +35,19 @@ function AdvancedMode() {
       .then((text) => {
         const wordList = text.split('\n').filter((word) => word.trim() !== '');
         setWords(wordList);
-        if (wordList.length > 0) {
-          setCurrentWord(wordList[Math.floor(Math.random() * wordList.length)]);
-        }
       });
   }, []);
+
+  useEffect(() => {
+    if (filteredWords.length > 0 && !currentWord) {
+      // Użyj setTimeout, żeby uniknąć synchronicznego setState w effect
+      setTimeout(() => {
+        setCurrentWord(
+          filteredWords[Math.floor(Math.random() * filteredWords.length)]
+        );
+      }, 0);
+    }
+  }, [filteredWords, currentWord]);
 
   useEffect(() => {
     let timer;
@@ -56,15 +84,18 @@ function AdvancedMode() {
       setScore(0);
       setTimeLeft(timerDuration);
       setIsPlaying(true);
-      if (words.length > 0) {
-        setCurrentWord(words[Math.floor(Math.random() * words.length)]);
+      if (filteredWords.length > 0) {
+        setCurrentWord(
+          filteredWords[Math.floor(Math.random() * filteredWords.length)]
+        );
       }
     }
   };
 
   const handleNext = () => {
-    if (isPlaying && words.length > 0) {
-      const randomWord = words[Math.floor(Math.random() * words.length)];
+    if (isPlaying && filteredWords.length > 0) {
+      const randomWord =
+        filteredWords[Math.floor(Math.random() * filteredWords.length)];
       setCurrentWord(randomWord);
       setScore((prev) => prev + 1);
     }
@@ -171,6 +202,69 @@ function AdvancedMode() {
         />
         <span>sekund</span>
       </div>
+
+      <div
+        style={{
+          marginTop: '0.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+        }}
+      >
+        <label>Liczba sylab:</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label htmlFor='minSyllables'>od</label>
+          <input
+            id='minSyllables'
+            type='number'
+            value={minSyllables}
+            onChange={(e) => {
+              const value = parseInt(e.target.value) || 1;
+              setMinSyllables(Math.max(1, Math.min(value, maxSyllables)));
+            }}
+            disabled={isPlaying}
+            min='1'
+            max='15'
+            style={{
+              padding: '0.5rem',
+              fontSize: '1rem',
+              borderRadius: '4px',
+              border: '1px solid #ccc',
+              width: '60px',
+              opacity: isPlaying ? 0.5 : 1,
+              cursor: isPlaying ? 'not-allowed' : 'text',
+            }}
+          />
+          <label htmlFor='maxSyllables'>do</label>
+          <input
+            id='maxSyllables'
+            type='number'
+            value={maxSyllables}
+            onChange={(e) => {
+              const value = parseInt(e.target.value) || 15;
+              setMaxSyllables(Math.max(minSyllables, Math.min(value, 15)));
+            }}
+            disabled={isPlaying}
+            min='1'
+            max='15'
+            style={{
+              padding: '0.5rem',
+              fontSize: '1rem',
+              borderRadius: '4px',
+              border: '1px solid #ccc',
+              width: '60px',
+              opacity: isPlaying ? 0.5 : 1,
+              cursor: isPlaying ? 'not-allowed' : 'text',
+            }}
+          />
+        </div>
+      </div>
+
+      <div style={{ fontSize: '0.9rem', color: '#888' }}>
+        Dostępnych słów: {filteredWords.length}
+      </div>
+
+      <Link to='/'>Wróć do trybu podstawowego</Link>
     </div>
   );
 }
